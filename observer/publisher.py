@@ -12,6 +12,31 @@ class Publishable(abc.ABC):
     def __init__(self):
         self._subscribers = {}
 
+    @property
+    @abc.abstractmethod
+    def _subscriber(self):
+        return self._subscriber
+
+    def subscribe_all(self, subscribers: list):
+        """
+        Add all subscribers based on uid
+
+        :param subscribers:
+        :return:
+        """
+        for subscriber in subscribers:
+            self._subscribers[subscriber.uid] = subscriber
+
+    def unsubscribe_all(self, subscribers: list):
+        """
+        Remove all subscribers based on uid
+
+        :param subscribers:
+        :return:
+        """
+        for subscriber in subscribers:
+            self._subscribers.pop(subscriber.uid)
+
     def subscribe(self, subscriber):
         """
         Add subscriber based on uid
@@ -30,7 +55,7 @@ class Publishable(abc.ABC):
         self._subscribers.pop(subscriber.uid)
 
     @abc.abstractmethod
-    def notify(self):
+    def _notify(self):
         """
         Notify all subscribers
         :return:

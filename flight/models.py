@@ -1,28 +1,7 @@
 from enum import Enum
 from observer.publisher import Publishable
-from flight.subscribers import FlightSubscriber, NewsletterSubscriber
+from observer.subscriber import Subscriber
 from utils.states import Stateable
-
-DEFAULT_SUBSCRIPTION = [FlightSubscriber, NewsletterSubscriber]
-
-
-class User:
-    """
-    User of airline
-    """
-
-    def __init__(self, uid: int, name: str):
-        self.uid = uid
-        self.name = name
-        self.subscriptions = self._init_subscription()
-
-    def _init_subscription(self):
-        for subscription in DEFAULT_SUBSCRIPTION:
-            yield subscription(self.uid)
-
-    def update(self):
-        for subscription in self.subscriptions:
-            subscription.update()
 
 
 class Flight(Publishable, Stateable):
@@ -32,6 +11,7 @@ class Flight(Publishable, Stateable):
         CANCELLED = 'cancelled'
         DELAYED = 'delayed'
 
+    _subscriber = {}
     state = States.ON_TIME
     states = States
 
@@ -41,14 +21,15 @@ class Flight(Publishable, Stateable):
         super().__init__()
 
     def __repr__(self):
-        return 'Flight %s manipulated by airline %s is %s' % self.number, self.airline, self.state
+        return 'Flight %s manipulated by airline %s is %s' % (self.number, self.airline, self.state.value)
 
-    def _change_state(self, state: States.member_type):
-        # todo change state maybe property?
+    def change_state(self, state: States):
+        # todo change state maybe to property
         self.state = state
-        self.notify()
+        self._notify()
 
-    def notify(self):
+    # todo decorator
+    def _notify(self):
         for subscriber in self._subscribers.values():
             subscriber.update(self)
 
@@ -57,6 +38,8 @@ class Newsletter(Publishable):
     """
     Newsletter domain model
     """
+
+    _subscriber = {}
 
     def __init__(self, letter: str=None, **kwargs):
         self.letter = letter
@@ -72,12 +55,34 @@ class Newsletter(Publishable):
         :return:
         """
         self.letter = message
-        self.notify()
+        self._notify()
 
-    def notify(self):
+    def _notify(self):
         """
         Notify all subscribers
         :return: None
         """
         for subscriber in self._subscribers.values():
             subscriber.update(self)
+
+
+class User(Subscriber):
+    """
+    User of airline
+    """
+    # todo review default for newsletter
+    default_subscription = [Newsletter]
+
+    def __init__(self, uid: int, name: str):
+        self.uid = uid
+        self.name = name
+        # self._init_subscription()
+
+    # def _init_subscription(self):
+    #     for subscription in self.default_subscription:
+    #         subscription.subscribe(self)
+
+    # todo: update - send email? no callback
+    def update(self, publisher):
+        # email to
+        print('Email for {}: {}'.format(self.name, publisher))
